@@ -1,6 +1,7 @@
 package com.practica.integracion;
 
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
@@ -74,5 +75,21 @@ public class TestInvalidUser {
 
 		ordered.verify(mockAuthDao).getAuthData(invalidUser.getId());
 		ordered.verify(mockGenericDao).updateSomeData(null, lista);
+	}
+	@Test
+	public void testRemoveSystemWithInvalidUserAndSystem() throws Exception{
+		when(mockAuthDao.getAuthData("1")).thenReturn(null);
+		String remoteId="12345";
+		lenient().when(mockGenericDao.deleteSomeData(null, remoteId)).thenThrow(OperationNotSupportedException.class);
+		
+		InOrder ordered = inOrder(mockAuthDao, mockGenericDao);
+		SystemManager manager = new SystemManager(mockAuthDao, mockGenericDao);
+		
+		Assertions.assertThrows(SystemManagerException.class, ()->{
+			manager.deleteRemoteSystem("1", remoteId);
+		});
+		
+		ordered.verify(mockAuthDao).getAuthData("1");
+		ordered.verify(mockGenericDao).deleteSomeData(null, remoteId);
 	}
 }
